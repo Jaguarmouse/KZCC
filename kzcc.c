@@ -18,6 +18,7 @@ struct Token {
   Token *next;
   int val;
   char *str;
+  int len;
 };
 
 typedef enum {
@@ -62,15 +63,19 @@ void error(char *fmt, ...) {
   exit(1);
 }
 
-bool consume(char op) {
-  if (token->kind != TK_RESERVED || token->str[0] != op) 
+bool consume(char *op) {
+  if (token->kind != TK_RESERVED ||
+      strlen(op) != token->len ||
+      strncmp(token->str, op, token->len)) 
     return false;
   token = token->next;
   return true;
 }
 
-void expect(char op) {
-  if (token->kind != TK_RESERVED || token->str[0] != op)
+void expect(char *op) {
+  if (token->kind != TK_RESERVED ||
+      strlen(op) != token->len ||
+      strncmp(token->str, op, token->len))
     error_at(token->str, "'%c'ではありません", op);
   token = token->next;
 }
@@ -87,12 +92,23 @@ bool at_eof() {
   return token->kind == TK_EOF;
 }
 
-Token *new_token(TokenKind kind, Token *cur, char *str) {
+Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
   Token *tok = calloc(1, sizeof(Token));
   tok->kind = kind;
   tok->str = str;
+  tok->len = len;
   cur->next = tok;
   return tok;
+}
+
+static char *starts_with_reserved(char *p) {
+  static char *ops[] = {"<=", ">=", "==", "!="};
+
+  for (int i = 0; i < sizeof(ops) / sizeof(*ops); i++)
+    if (strncmp(ops[i], p, strlen(ops[i])) == 0)
+        return ops[i];
+
+  return NULL;
 }
 
 Token *tokenize(char *p) {
@@ -106,21 +122,31 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')') {
-      cur = new_token(TK_RESERVED, cur, p++);
+    char *op = starts_with_reserved(p);
+    if (op) {
+      int len = strlen(op);
+      cur = new_token(TK_RESERVED, cur, p, len);
+      p += len;
+      continue;
+    }
+
+    if (ispunct(*p)) {
+      cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }
 
     if (isdigit(*p)) {
-      cur = new_token(TK_NUM, cur, p);
-      cur->val = strtol(p, &p, 10);
+      char *q = p;
+      int val = strtol(p, &p, 10);
+      cur = new_token(TK_NUM, cur, q, p-q);
+      cur->val = val;
       continue;
     }
 
     error_at(p, "トークナイズできません");
   }
 
-  new_token(TK_EOF, cur, p);
+  new_token(TK_EOF, cur, p, 0);
   return head.next;
 }
 
@@ -145,18 +171,18 @@ Node *new_node_num(int val) {
 }
 
 Node *primary() {
-  if (consume('(')) {
+  if (consume("(")) {
     Node *node = expr();
-    expect(')');
+    expect(")");
     return node;
   }
   return new_node_num(expect_number());
 }
 
 Node *unary() {
-  if (consume('+'))
+  if (consume("+"))
     return primary();
-  if (consume('-'))
+  if (consume("-"))
     return new_node(ND_SUB, new_node_num(0), primary());
   return primary();
 }
@@ -165,9 +191,9 @@ Node *mul() {
   Node *node = unary();
 
   for(;;) {
-    if (consume('*'))
+    if (consume("*"))
       node = new_node(ND_MUL, node, unary());
-    else if (consume('/'))
+    else if (consume("/"))
       node = new_node(ND_DIV, node, unary());
     else
       return node;
@@ -178,9 +204,9 @@ Node *expr() {
   Node *node = mul();
 
   for(;;) {
-    if (consume('+'))
+    if (consume("+"))
       node = new_node(ND_ADD, node, mul());
-    else if (consume('-'))
+    else if (consume("-"))
       node = new_node(ND_SUB, node, mul());
     else
       return node;
