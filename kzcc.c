@@ -26,7 +26,11 @@ typedef enum {
   ND_SUB,
   ND_NUM,
   ND_MUL,
-  ND_DIV
+  ND_DIV,
+  ND_LT,
+  ND_LE,
+  ND_EQ,
+  ND_NE
 } NodeKind;
 
 typedef struct Node Node;
@@ -150,10 +154,13 @@ Token *tokenize(char *p) {
   return head.next;
 }
 
-Node *primary();
-Node *unary();
-Node *mul();
 Node *expr();
+Node *equality();
+Node *relational();
+Node *add();
+Node *mul();
+Node *unary();
+Node *primary();
 
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
@@ -170,23 +177,55 @@ Node *new_node_num(int val) {
   return node;
 }
 
-Node *primary() {
-  if (consume("(")) {
-    Node *node = expr();
-    expect(")");
-    return node;
+// expr = equality
+Node *expr() {
+  return equality();
+}
+
+// equality = relational ("==" relational | "!=" relational)*
+Node *equality() {
+  Node *node = relational();
+
+  if (consume("=="))
+    node = new_node(ND_EQ, node, relational());
+  else if (consume("!=")) {
+    node = new_node(ND_NE, node, relational());
   }
-  return new_node_num(expect_number());
+
+  return node;
 }
 
-Node *unary() {
-  if (consume("+"))
-    return primary();
-  if (consume("-"))
-    return new_node(ND_SUB, new_node_num(0), primary());
-  return primary();
+// relational = add ("<" add | "<=" add | ">" add | ">= add)*
+Node *relational() {
+  Node *node = add();
+
+  if (consume("<")) 
+    node = new_node(ND_LT, node, add());
+  else if (consume("<="))
+    node = new_node(ND_LE, node, add());
+  else if (consume(">"))
+    node = new_node(ND_LT, add(), node);
+  else if (consume(">="))
+    node = new_node(ND_LE, add(), node);
+
+  return node;
 }
 
+// add = mul ("+" mul | "-" mul)*
+Node *add() {
+  Node *node = mul();
+
+  for(;;) {
+    if (consume("+"))
+      node = new_node(ND_ADD, node, mul());
+    else if (consume("-"))
+      node = new_node(ND_SUB, node, mul());
+    else
+      return node;
+  }
+}
+
+// mul = unary ("*" unary | "/" unary)*
 Node *mul() {
   Node *node = unary();
 
@@ -200,17 +239,23 @@ Node *mul() {
   }
 }
 
-Node *expr() {
-  Node *node = mul();
+// unary = ("+" | "-")? primary
+Node *unary() {
+  if (consume("+"))
+    return primary();
+  if (consume("-"))
+    return new_node(ND_SUB, new_node_num(0), primary());
+  return primary();
+}
 
-  for(;;) {
-    if (consume("+"))
-      node = new_node(ND_ADD, node, mul());
-    else if (consume("-"))
-      node = new_node(ND_SUB, node, mul());
-    else
-      return node;
+// primary = num | "(" expr ")"
+Node *primary() {
+  if (consume("(")) {
+    Node *node = expr();
+    expect(")");
+    return node;
   }
+  return new_node_num(expect_number());
 }
 
 void gen(Node *node) {
