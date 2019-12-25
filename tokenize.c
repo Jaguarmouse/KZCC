@@ -34,9 +34,9 @@ bool consume(char *op) {
 }
 
 Token *consume_ident() {
-  Token *tok = token;
   if (token->kind != TK_IDENT)
     return NULL;
+  Token *tok = token;
   token = token->next;
   return tok;
 }
@@ -45,7 +45,7 @@ void expect(char *op) {
   if (token->kind != TK_RESERVED ||
       strlen(op) != token->len ||
       strncmp(token->str, op, token->len))
-    error_at(token->str, "'%c'ではありません", op);
+    error_at(token->str, "'%c'ではありません", *op);
   token = token->next;
 }
 
@@ -80,6 +80,10 @@ static char *starts_with_reserved(char *p) {
   return NULL;
 }
 
+static bool is_alphabet(char c) {
+  return ('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z') || c == '_';
+}
+
 void tokenize() {
   char *p = user_input;
 
@@ -93,16 +97,19 @@ void tokenize() {
       continue;
     }
 
-    if ('a' <= *p && *p <= 'z') {
-      cur = new_token(TK_IDENT, cur, p++, 1);
-      continue;
-    }
-
     char *op = starts_with_reserved(p);
     if (op) {
       int len = strlen(op);
       cur = new_token(TK_RESERVED, cur, p, len);
       p += len;
+      continue;
+    }
+
+    if (is_alphabet(*p)) {
+      char *q = p++;
+      while (is_alphabet(*p))
+        p++;
+      cur = new_token(TK_IDENT, cur, q, p-q);
       continue;
     }
 

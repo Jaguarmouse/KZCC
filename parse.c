@@ -1,6 +1,7 @@
 #include "kzcc.h"
 
 Node *code[100];
+LVar *locals;
 
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
@@ -17,15 +18,24 @@ Node *new_node_num(int val) {
   return node;
 }
 
-Node *new_node_ident(char c) {
-  Node *node = calloc(1, sizeof(Node));
-  node->kind = ND_LVAR;
-  node->offset = (c - 'a' + 1) * 8;
-  return node;
+LVar *new_lvar(char *name, int len, int offset) {
+  LVar *lvar = calloc(1, sizeof(LVar));
+  lvar->name = name;
+  lvar->len = len;
+  lvar->offset = offset;
+  return lvar;
+}
+
+LVar *find_lvar(Token *tok) {
+  for (LVar *var = locals; var; var = var->next)
+    if (var->len == tok->len && strncmp(tok->str, var->name, var->len) == 0)
+      return var;
+  return NULL;
 }
 
 // program = stmt*
 void program() {
+  locals = NULL;
   int i = 0;
   while (!at_eof())
     code[i++] = stmt();
@@ -48,9 +58,9 @@ Node *expr() {
 Node *assign() {
   Node *node = equality();
 
-  if (consume("=")) {
+  if (consume("="))
     node = new_node(ND_ASSIGN, node, assign());
-  }
+  
   return node;
 }
 
@@ -129,8 +139,23 @@ Node *primary() {
   }
 
   Token *tok = consume_ident();
-  if (tok)
-    return new_node_ident(tok->str[0]);
+  if (tok) {
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = ND_LVAR;
+
+    LVar *lvar = find_lvar(tok);
+    if (lvar) {
+      node->offset = lvar->offset;
+    } else {
+      int offset = locals ? locals->offset : 0;
+      lvar = new_lvar(tok->str, tok->len, offset + 8);
+      node->offset = lvar->offset;
+      lvar->next = locals;
+      locals = lvar;
+    }
+
+    return node;
+  }
 
   return new_node_num(expect_number());
 }

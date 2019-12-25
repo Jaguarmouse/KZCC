@@ -42,6 +42,15 @@ extern Token *token;
 // parse.c
 //
 
+typedef struct LVar LVar;
+
+struct LVar {
+  LVar *next;
+  char *name;
+  int len;
+  int offset;
+};
+
 typedef enum {
   ND_ADD,
   ND_SUB,
@@ -78,6 +87,7 @@ Node *unary();
 Node *primary();
 
 extern Node *code[];
+extern LVar *locals;
 
 // 
 // codegen.c
