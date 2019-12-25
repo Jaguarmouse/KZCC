@@ -33,7 +33,7 @@ Token *consume_ident(void);
 void expect(char *op);
 int expect_number(void);
 bool at_eof(void);
-Token *tokenize(char *p);
+void tokenize(void);
 
 extern char *user_input;
 extern Token *token;
@@ -83,5 +83,5 @@ extern Node *code[];
 // codegen.c
 //
 
-
+void gen_lval(Node *node);
 void gen(Node *node);

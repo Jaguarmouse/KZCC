@@ -80,7 +80,9 @@ static char *starts_with_reserved(char *p) {
   return NULL;
 }
 
-Token *tokenize(char *p) {
+void tokenize() {
+  char *p = user_input;
+
   Token head;
   head.next = NULL;
   Token *cur = &head;
@@ -121,5 +123,5 @@ Token *tokenize(char *p) {
   }
 
   new_token(TK_EOF, cur, p, 0);
-  return head.next;
+  token = head.next;
 }
