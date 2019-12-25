@@ -1,5 +1,7 @@
 #include "kzcc.h"
 
+Node *code[100];
+
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
@@ -15,9 +17,41 @@ Node *new_node_num(int val) {
   return node;
 }
 
-// expr = equality
+Node *new_node_ident(char c) {
+  Node *node = calloc(1, sizeof(Node));
+  node->kind = ND_LVAR;
+  node->offset = (c - 'a' + 1) * 8;
+  return node;
+}
+
+// program = stmt*
+void program() {
+  int i = 0;
+  while (!at_eof())
+    code[i++] = stmt();
+  code[i] = NULL;
+}
+
+// stmt = expr ";"
+Node *stmt() {
+  Node *node = expr();
+  expect(";");
+  return node;
+}
+
+// expr = assign
 Node *expr() {
-  return equality();
+  return assign();
+}
+
+// assign = equality ("=" assign)?
+Node *assign() {
+  Node *node = equality();
+
+  if (consume("=")) {
+    node = new_node(ND_ASSIGN, node, assign());
+  }
+  return node;
 }
 
 // equality = relational ("==" relational | "!=" relational)*
@@ -86,12 +120,17 @@ Node *unary() {
   return primary();
 }
 
-// primary = num | "(" expr ")"
+// primary = num | ident | "(" expr ")"
 Node *primary() {
   if (consume("(")) {
     Node *node = expr();
     expect(")");
     return node;
   }
+
+  Token *tok = consume_ident();
+  if (tok)
+    return new_node_ident(tok->str[0]);
+
   return new_node_num(expect_number());
 }
