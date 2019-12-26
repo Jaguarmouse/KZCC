@@ -31,5 +31,6 @@ try 0 '10 != 10;'
 try 0 '4+3;8-4*2;'
 try 9 'aboon = 3; nemo = 5;aboon+nemo+1;'
 try 6 'a=b=3;(a+3*b)/2;'
+try 6 'return 6;'
 
 echo OK

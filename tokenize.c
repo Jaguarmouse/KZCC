@@ -70,7 +70,19 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
   return tok;
 }
 
+static bool is_alphabet(char c) {
+  return ('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z') || c == '_';
+}
+
 static char *starts_with_reserved(char *p) {
+  static char *kws[] = {"return"};
+
+  for (int i = 0; i < sizeof(kws) / sizeof(*kws); i++) {
+    int len = strlen(kws[i]);
+    if (strncmp(kws[i], p, len) == 0 && !is_alphabet(p[len]))
+      return kws[i];
+  }
+
   static char *ops[] = {"<=", ">=", "==", "!="};
 
   for (int i = 0; i < sizeof(ops) / sizeof(*ops); i++)
@@ -78,10 +90,6 @@ static char *starts_with_reserved(char *p) {
         return ops[i];
 
   return NULL;
-}
-
-static bool is_alphabet(char c) {
-  return ('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z') || c == '_';
 }
 
 void tokenize() {

@@ -52,6 +52,7 @@ struct LVar {
 };
 
 typedef enum {
+  ND_RETURN,
   ND_ADD,
   ND_SUB,
   ND_MUL,
