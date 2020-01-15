@@ -33,4 +33,12 @@ try 9 'aboon = 3; nemo = 5;aboon+nemo+1;'
 try 6 'a=b=3;(a+3*b)/2;'
 try 6 'return 6;'
 
+try 5 'x = 3; if (x > 10) return 10; return 5;'
+
+try 10 'x=3; while (x<10) x=x+1;return x;'
+
+try 55 'x=0; for (i=0;i<=10;i=i+1) x = x+i; return x;'
+
+try 10 'x=0; for (i=0;i<=10;i=i+1) if (i<=4) x = x+i; return x;'
+
 echo OK

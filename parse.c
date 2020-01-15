@@ -46,7 +46,7 @@ void program() {
 //      | "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
-//      | "for" "(" expr? ";" expr? ";" expr? ";" ")" stmt
+//      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 
 Node *stmt() {
   Node *node;
@@ -54,6 +54,8 @@ Node *stmt() {
   if (consume("return")) {
     node = new_node(ND_RETURN, NULL, NULL);
     node->lhs = expr();
+    expect(";");
+    return node;
   }
 
   if (consume("if")) {
@@ -79,13 +81,18 @@ Node *stmt() {
   if (consume("for")) {
     node = new_node(ND_FOR, NULL, NULL);
     expect("(");
-    if (!consume(";"))
+    if (!consume(";")) {
       node->init = expr();
-    if (!consume(";"))
+      expect(";");
+    }
+    if (!consume(";")) {
       node->cond = expr();
-    if (!consume(";"))
+      expect(";");
+    }
+    if (!consume(")")) {
       node->inc = expr();
-    expect(")");
+      expect(")");
+    }
     node->then = stmt();
     return node;
   }

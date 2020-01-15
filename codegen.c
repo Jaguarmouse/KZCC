@@ -1,5 +1,9 @@
 #include "kzcc.h"
 
+int beginseq = 0;
+int endseq = 0;
+int elseseq = 0;
+
 void gen_lval(Node *node) {
   if (node->kind != ND_LVAR)
     error("left value not variable!");
@@ -10,6 +14,7 @@ void gen_lval(Node *node) {
 }
 
 void gen(Node *node) {
+  int begin,end,els;
   switch (node->kind) {
   case ND_NUM:
     printf("  push %d\n", node->val);
@@ -36,7 +41,51 @@ void gen(Node *node) {
     printf("  pop rbp\n");
     printf("  ret\n");
     return;
- }
+  case ND_IF:
+    els = elseseq++;
+    end = endseq++;
+    gen(node->cond);
+    printf("  pop rax\n");
+    printf("  cmp rax, 0\n");
+    if (node->els) {
+      printf("  je .L.else.%d\n", els);
+      gen(node->then);
+      printf("  jmp .L.end.%d\n", end);
+      printf(".L.else.%d:\n", els);
+      gen(node->els);
+    } else {
+      printf("  je .L.end.%d\n", end);
+      gen(node->then);
+    }
+    printf(".L.end.%d:\n", end);
+    return;
+  case ND_WHILE:
+    begin = beginseq++;
+    end = endseq++;
+    printf(".L.begin.%d:\n", begin);
+    gen(node->cond);
+    printf("  pop rax\n");
+    printf("  cmp rax, 0\n");
+    printf("  je .L.end.%d\n", end);
+    gen(node->then);
+    printf("  jmp .L.begin.%d\n", begin);
+    printf(".L.end.%d:\n", end);
+    return;
+  case ND_FOR:
+    begin = beginseq++;
+    end = endseq++;
+    gen(node->init);
+    printf(".L.begin.%d:\n", begin);
+    gen(node->cond);
+    printf("  pop rax\n");
+    printf("  cmp rax, 0\n");
+    printf("  je .L.end.%d\n", end);
+    gen(node->then);
+    gen(node->inc);
+    printf("  jmp .L.begin.%d\n", begin);
+    printf(".L.end.%d:\n", end);
+    return;
+  }
 
   gen(node->lhs);
   gen(node->rhs);
