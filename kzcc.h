@@ -52,7 +52,6 @@ struct LVar {
 };
 
 typedef enum {
-  ND_RETURN,
   ND_ADD,
   ND_SUB,
   ND_MUL,
@@ -62,6 +61,10 @@ typedef enum {
   ND_EQ,
   ND_NE,
   ND_ASSIGN,
+  ND_RETURN,
+  ND_IF,
+  ND_WHILE,
+  ND_FOR,
   ND_LVAR,
   ND_NUM
 } NodeKind;
@@ -72,8 +75,19 @@ struct Node {
   NodeKind kind;
   Node *lhs;
   Node *rhs;
+
+  //ND_NUM
   int val;
+
+  //ND_LVAR
   int offset;
+
+  //ND_IF, ND_WHILE, ND_FOR
+  Node *cond;
+  Node *then;
+  Node *els;
+  Node *init;
+  Node *inc;
 };
 
 void program();

@@ -44,19 +44,57 @@ void program() {
 
 // stmt = expr ";"
 //      | "return" expr ";"
+//      | "if" "(" expr ")" stmt ("else" stmt)?
+//      | "while" "(" expr ")" stmt
+//      | "for" "(" expr? ";" expr? ";" expr? ";" ")" stmt
+
 Node *stmt() {
   Node *node;
 
   if (consume("return")) {
-    node = calloc(1, sizeof(Node));
-    node->kind = ND_RETURN;
+    node = new_node(ND_RETURN, NULL, NULL);
     node->lhs = expr();
-  } else {
-    node = expr();
   }
 
+  if (consume("if")) {
+    node = new_node(ND_IF, NULL, NULL);
+    expect("(");
+    node->cond = expr();
+    expect(")");
+    node->then = stmt();
+    if (consume("else"))
+      node->els = stmt();
+    return node;
+  }
+
+  if (consume("while")) {
+    node = new_node(ND_WHILE, NULL, NULL);
+    expect("(");
+    node->cond = expr();
+    expect(")");
+    node->then = stmt();
+    return node;
+  }
+
+  if (consume("for")) {
+    node = new_node(ND_FOR, NULL, NULL);
+    expect("(");
+    if (!consume(";"))
+      node->init = expr();
+    if (!consume(";"))
+      node->cond = expr();
+    if (!consume(";"))
+      node->inc = expr();
+    expect(")");
+    node->then = stmt();
+    return node;
+  }
+
+  node = expr();
   expect(";");
   return node;
+  
+
 }
 
 // expr = assign

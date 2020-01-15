@@ -75,7 +75,7 @@ static bool is_alphabet(char c) {
 }
 
 static char *starts_with_reserved(char *p) {
-  static char *kws[] = {"return"};
+  static char *kws[] = {"return", "if", "else", "while", "for"};
 
   for (int i = 0; i < sizeof(kws) / sizeof(*kws); i++) {
     int len = strlen(kws[i]);
