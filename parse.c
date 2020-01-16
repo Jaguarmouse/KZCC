@@ -99,15 +99,14 @@ Node *stmt() {
   }
 
   if (consume("{")) {
+    node = new_node(ND_BLOCK, NULL, NULL);
+
     Node head;
     Node *cur = &head;
-
     while(!consume("}")) {
       cur->next = stmt();
       cur = cur->next;
     }
-
-    node = new_node(ND_BLCOK, NULL, NULL);
     node->body = head.next;
     return node;
   }
@@ -115,8 +114,6 @@ Node *stmt() {
   node = expr();
   expect(";");
   return node;
-  
-
 }
 
 // expr = assign

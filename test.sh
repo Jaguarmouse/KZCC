@@ -41,4 +41,16 @@ try 55 'x=0; for (i=0;i<=10;i=i+1) x = x+i; return x;'
 
 try 10 'x=0; for (i=0;i<=10;i=i+1) if (i<=4) x = x+i; return x;'
 
+try 20 '{x=10; y=10; return x+y;}'
+
+try 30 '
+x=0;
+y=1;
+for (i=0;i<4;i=i+1) { 
+  x = x+i;
+  y = y*(i+1); 
+} 
+return x + y;
+'
+
 echo OK
