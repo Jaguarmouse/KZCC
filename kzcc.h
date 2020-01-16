@@ -67,6 +67,7 @@ typedef enum {
   ND_FOR,
   ND_BLOCK,
   ND_LVAR,
+  ND_FUNCALL,
   ND_NUM
 } NodeKind;
 
@@ -82,6 +83,10 @@ struct Node {
 
   //ND_LVAR
   int offset;
+
+  //ND_FUNCALL
+  char *funcname;
+  Node *args;
 
   //ND_IF, ND_WHILE, ND_FOR
   Node *cond;

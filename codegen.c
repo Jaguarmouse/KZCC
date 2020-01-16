@@ -3,6 +3,7 @@
 int beginseq = 0;
 int endseq = 0;
 int elseseq = 0;
+int callseq = 0;
 
 void gen_lval(Node *node) {
   if (node->kind != ND_LVAR)
@@ -14,7 +15,7 @@ void gen_lval(Node *node) {
 }
 
 void gen(Node *node) {
-  int begin,end,els;
+  int begin,end,els, call;
   switch (node->kind) {
   case ND_NUM:
     printf("  push %d\n", node->val);
@@ -88,6 +89,40 @@ void gen(Node *node) {
   case ND_BLOCK:
     for (Node *n = node->body; n; n = n->next)
       gen(n);
+    return;
+  case ND_FUNCALL:
+    call = callseq++;
+    end = endseq++;
+    
+    // check if rsp aligns to 16 (ABI requirement)
+    printf("  mov rax, rsp\n");
+    printf("  and rax, 15\n");
+
+    // if not, go do that
+    printf("  jnz .L.call.%d\n", call);
+
+    // else, reset rax and call
+    printf("  mov rax, 0\n");
+    printf("  call %s\n", node->funcname);
+
+    // jump to the end
+    printf("  jmp .L.end.%d\n", end);
+
+    // make sure rsp aligns to 16
+    printf(".L.call.%d:\n", call);
+    printf("  sub rsp, 8\n");
+    
+    // reset rax and call
+    printf("  mov rax, 0\n");
+    printf("  call %s\n", node->funcname);
+
+    // set rsp back to its original address
+    printf("  add rsp, 8\n");
+    printf(".L.end.%d:\n", end);
+
+    // push the return value to the stack top
+    printf("  push rax\n");
+
     return;
   }
 
