@@ -5,6 +5,8 @@ int endseq = 0;
 int elseseq = 0;
 int callseq = 0;
 
+static char *argreg8[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+
 void gen_lval(Node *node) {
   if (node->kind != ND_LVAR)
     error("left value not variable!");
@@ -15,7 +17,15 @@ void gen_lval(Node *node) {
 }
 
 void gen(Node *node) {
+  // Label ids
   int begin,end,els, call;
+
+  // Argument count
+  int nargs;
+
+  // Iterators
+  int i;
+
   switch (node->kind) {
   case ND_NUM:
     printf("  push %d\n", node->val);
@@ -91,6 +101,15 @@ void gen(Node *node) {
       gen(n);
     return;
   case ND_FUNCALL:
+    nargs = 0;
+    for (Node *arg = node->args; arg; arg = arg->next) {
+      gen(arg);
+      nargs++;
+    }
+
+    for (i = nargs - 1; i >= 0; i--)
+      printf("  pop %s\n", argreg8[i]);
+
     call = callseq++;
     end = endseq++;
     

@@ -197,8 +197,26 @@ Node *unary() {
   return primary();
 }
 
+// func_args = "(" (expr ("," expr)*)? ")"
+Node *func_args() {
+  if (consume(")"))
+    return NULL;
+
+  Node *head = expr();
+  Node *cur = head;
+
+  while (consume(",")) {
+    cur->next = expr();
+    cur = cur->next;
+  }
+
+  expect(")");
+
+  return head;
+}
+
 // primary = num
-//         | ident ("(" ")")?
+//         | ident func_args?
 //         | "(" expr ")"
 Node *primary() {
   if (consume("(")) {
@@ -212,7 +230,7 @@ Node *primary() {
     if (consume("(")) {
       Node *node = new_node(ND_FUNCALL, NULL, NULL);
       node->funcname = strndup(tok->str, tok->len);
-      expect(")");
+      node->args = func_args();
       return node;
     }
 
