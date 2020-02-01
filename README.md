@@ -1,6 +1,8 @@
 # KZCC
 C言語＆低レイヤ学習を目的とした個人制作Cコンパイラ
 
+inspired by https://www.sigbus.info/compilerbook
+
 ## Features
 - 整数の四則演算
 - 整数の比較演算
