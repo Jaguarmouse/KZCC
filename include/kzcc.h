@@ -110,6 +110,7 @@ Node *add();
 Node *mul();
 Node *unary();
 Node *primary();
+Node *func_args();
 
 extern Node *code[];
 extern LVar *locals;
